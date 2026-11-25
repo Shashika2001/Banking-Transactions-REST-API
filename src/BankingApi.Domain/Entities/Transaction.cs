@@ -27,7 +27,8 @@ public sealed class Transaction : Entity
         decimal balanceAfter,
         DateTimeOffset createdAt,
         string? reference,
-        string? idempotencyKey)
+        string? idempotencyKey,
+        Guid? transferId)
     {
         AccountId = accountId;
         Type = type;
@@ -36,6 +37,7 @@ public sealed class Transaction : Entity
         CreatedAt = createdAt;
         Reference = reference;
         IdempotencyKey = idempotencyKey;
+        TransferId = transferId;
     }
 
     /// <summary>Gets the account the transaction belongs to.</summary>
@@ -56,6 +58,12 @@ public sealed class Transaction : Entity
     /// <summary>Gets the optional client-supplied key used to prevent duplicate processing.</summary>
     public string? IdempotencyKey { get; private set; }
 
+    /// <summary>
+    /// Gets the identifier shared by the two legs (<see cref="TransactionType.TransferOut"/> and
+    /// <see cref="TransactionType.TransferIn"/>) of a transfer, or <see langword="null"/> for other transactions.
+    /// </summary>
+    public Guid? TransferId { get; private set; }
+
     /// <summary>Gets when the transaction happened (UTC).</summary>
     public DateTimeOffset CreatedAt { get; private set; }
 
@@ -69,7 +77,8 @@ public sealed class Transaction : Entity
         decimal balanceAfter,
         DateTimeOffset createdAt,
         string? reference,
-        string? idempotencyKey)
+        string? idempotencyKey,
+        Guid? transferId = null)
     {
         return new Transaction(
             accountId,
@@ -78,6 +87,7 @@ public sealed class Transaction : Entity
             balanceAfter,
             createdAt,
             Guard.OptionalText(reference, nameof(Reference), ReferenceMaxLength),
-            Guard.OptionalText(idempotencyKey, nameof(IdempotencyKey), IdempotencyKeyMaxLength));
+            Guard.OptionalText(idempotencyKey, nameof(IdempotencyKey), IdempotencyKeyMaxLength),
+            transferId);
     }
 }

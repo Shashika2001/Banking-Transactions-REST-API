@@ -1,4 +1,6 @@
+using BankingApi.Application.Abstractions;
 using BankingApi.Application.Abstractions.Persistence;
+using BankingApi.Infrastructure.Accounts;
 using BankingApi.Infrastructure.Persistence;
 using BankingApi.Infrastructure.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -47,6 +49,7 @@ public static class DependencyInjection
         services.AddScoped<ITransactionRepository, TransactionRepository>();
         services.AddScoped<IAuditLogRepository, AuditLogRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+        services.AddSingleton<IAccountNumberGenerator, RandomAccountNumberGenerator>();
 
         return services;
     }

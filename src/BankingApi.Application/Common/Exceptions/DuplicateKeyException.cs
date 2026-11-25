@@ -3,7 +3,7 @@ namespace BankingApi.Application.Common.Exceptions;
 /// <summary>
 /// Raised when saving would violate a unique constraint, such as a reused idempotency key or account number.
 /// </summary>
-public sealed class DuplicateKeyException : Exception
+public sealed class DuplicateKeyException : ConflictException
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="DuplicateKeyException"/> class.

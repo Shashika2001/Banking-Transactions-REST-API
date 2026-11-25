@@ -30,6 +30,9 @@ internal sealed class TransactionConfiguration : IEntityTypeConfiguration<Transa
             .IsUnique()
             .HasFilter("[IdempotencyKey] IS NOT NULL");
 
+        // Links the two legs of a transfer.
+        builder.HasIndex(transaction => transaction.TransferId).HasFilter("[TransferId] IS NOT NULL");
+
         // Supports paging an account's history, newest first.
         builder.HasIndex(transaction => new { transaction.AccountId, transaction.CreatedAt });
 

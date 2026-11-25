@@ -110,6 +110,70 @@ public sealed class Account : Entity
         Debit(TransactionType.Withdrawal, amount, occurredAt, reference, idempotencyKey);
 
     /// <summary>
+    /// Moves money from this account to another account of the same currency. Every rule is checked before either
+    /// balance changes, so a rejected transfer leaves both accounts untouched.
+    /// </summary>
+    /// <param name="destination">The account receiving the money.</param>
+    /// <param name="amount">The positive amount to transfer, with at most two decimal places.</param>
+    /// <param name="occurredAt">When the transfer happened.</param>
+    /// <param name="reference">An optional free-text reference recorded on both legs.</param>
+    /// <param name="idempotencyKey">An optional client-supplied key, recorded on the outgoing leg only.</param>
+    /// <returns>The outgoing and incoming transactions, linked by a shared transfer identifier.</returns>
+    /// <exception cref="SameAccountTransferException">Thrown when <paramref name="destination"/> is this account.</exception>
+    /// <exception cref="CurrencyMismatchException">Thrown when the accounts use different currencies.</exception>
+    /// <exception cref="InvalidAmountException">
+    /// Thrown when the amount is not positive, has too many decimal places, or would push the destination balance
+    /// above <see cref="MaxMoneyValue"/>.
+    /// </exception>
+    /// <exception cref="AccountNotActiveException">Thrown when either account is not active.</exception>
+    /// <exception cref="InsufficientFundsException">Thrown when this account's balance is lower than the amount.</exception>
+    /// <exception cref="DomainValidationException">Thrown when the reference or idempotency key is blank or too long.</exception>
+    public TransferLegs TransferTo(
+        Account destination,
+        decimal amount,
+        DateTimeOffset occurredAt,
+        string? reference = null,
+        string? idempotencyKey = null)
+    {
+        ArgumentNullException.ThrowIfNull(destination);
+
+        if (destination.Id == Id)
+        {
+            throw new SameAccountTransferException(Id);
+        }
+
+        if (!string.Equals(Currency, destination.Currency, StringComparison.Ordinal))
+        {
+            throw new CurrencyMismatchException(Currency, destination.Currency);
+        }
+
+        EnsureValidAmount(amount);
+        EnsureActive();
+        destination.EnsureActive();
+
+        if (amount > Balance)
+        {
+            throw new InsufficientFundsException(Id, Balance, amount);
+        }
+
+        if (amount > MaxMoneyValue - destination.Balance)
+        {
+            throw new InvalidAmountException(amount, $"the destination balance would exceed the maximum of {MaxMoneyValue}.");
+        }
+
+        var transferId = Guid.NewGuid();
+        var outgoing = Transaction.Record(
+            Id, TransactionType.TransferOut, amount, Balance - amount, occurredAt, reference, idempotencyKey, transferId);
+        var incoming = Transaction.Record(
+            destination.Id, TransactionType.TransferIn, amount, destination.Balance + amount, occurredAt, reference, null, transferId);
+
+        Balance = outgoing.BalanceAfter;
+        destination.Balance = incoming.BalanceAfter;
+
+        return new TransferLegs(transferId, outgoing, incoming);
+    }
+
+    /// <summary>
     /// Freezes an active account, blocking all money movements.
     /// </summary>
     /// <exception cref="InvalidAccountStateException">Thrown when the account is not active.</exception>

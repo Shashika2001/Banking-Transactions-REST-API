@@ -4,7 +4,7 @@ namespace BankingApi.Application.Common.Exceptions;
 /// Raised when data could not be saved because another request modified it first (optimistic concurrency).
 /// The caller may reload the data and retry.
 /// </summary>
-public sealed class ConcurrencyConflictException : Exception
+public sealed class ConcurrencyConflictException : ConflictException
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="ConcurrencyConflictException"/> class.

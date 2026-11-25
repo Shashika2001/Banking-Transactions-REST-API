@@ -359,6 +359,147 @@ public class AccountTests
         account.Balance.Should().Be(70.25m);
     }
 
+    // ---- TransferTo --------------------------------------------------------------------------
+
+    [Fact]
+    public void TransferTo_WithSufficientFunds_MovesMoneyBetweenAccounts()
+    {
+        var source = OpenAccount(initialBalance: 100m);
+        var destination = OpenAccount(initialBalance: 5m);
+
+        source.TransferTo(destination, 40m, Now);
+
+        source.Balance.Should().Be(60m);
+        destination.Balance.Should().Be(45m);
+    }
+
+    [Fact]
+    public void TransferTo_WithSufficientFunds_ReturnsLinkedLegs()
+    {
+        var source = OpenAccount(initialBalance: 100m);
+        var destination = OpenAccount();
+
+        var legs = source.TransferTo(destination, 40m, Now, "Rent", "key-1");
+
+        legs.TransferId.Should().NotBeEmpty();
+        legs.Outgoing.AccountId.Should().Be(source.Id);
+        legs.Outgoing.Type.Should().Be(TransactionType.TransferOut);
+        legs.Outgoing.Amount.Should().Be(40m);
+        legs.Outgoing.BalanceAfter.Should().Be(60m);
+        legs.Outgoing.IdempotencyKey.Should().Be("key-1");
+        legs.Outgoing.TransferId.Should().Be(legs.TransferId);
+        legs.Incoming.AccountId.Should().Be(destination.Id);
+        legs.Incoming.Type.Should().Be(TransactionType.TransferIn);
+        legs.Incoming.BalanceAfter.Should().Be(40m);
+        legs.Incoming.IdempotencyKey.Should().BeNull();
+        legs.Incoming.TransferId.Should().Be(legs.TransferId);
+        legs.Outgoing.Reference.Should().Be("Rent");
+        legs.Incoming.Reference.Should().Be("Rent");
+    }
+
+    [Fact]
+    public void TransferTo_SameAccount_ThrowsSameAccountTransferException()
+    {
+        var account = OpenAccount(initialBalance: 100m);
+
+        var act = () => account.TransferTo(account, 10m, Now);
+
+        act.Should().Throw<SameAccountTransferException>().Which.AccountId.Should().Be(account.Id);
+        account.Balance.Should().Be(100m);
+    }
+
+    [Fact]
+    public void TransferTo_DifferentCurrency_ThrowsCurrencyMismatchException()
+    {
+        var source = OpenAccount(initialBalance: 100m);
+        var destination = Account.Open("ACC-0002", CustomerId, "EUR", OpenedAt);
+
+        var act = () => source.TransferTo(destination, 10m, Now);
+
+        act.Should().Throw<CurrencyMismatchException>();
+        source.Balance.Should().Be(100m);
+    }
+
+    [Fact]
+    public void TransferTo_WithInsufficientFunds_ThrowsAndLeavesBothBalancesUnchanged()
+    {
+        var source = OpenAccount(initialBalance: 100m);
+        var destination = OpenAccount();
+
+        var act = () => source.TransferTo(destination, 100.01m, Now);
+
+        act.Should().Throw<InsufficientFundsException>();
+        source.Balance.Should().Be(100m);
+        destination.Balance.Should().Be(0m);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    [InlineData(0.001)]
+    public void TransferTo_WithInvalidAmount_ThrowsInvalidAmountException(decimal amount)
+    {
+        var source = OpenAccount(initialBalance: 100m);
+        var destination = OpenAccount();
+
+        var act = () => source.TransferTo(destination, amount, Now);
+
+        act.Should().Throw<InvalidAmountException>();
+        source.Balance.Should().Be(100m);
+    }
+
+    [Fact]
+    public void TransferTo_FromInactiveAccount_ThrowsAccountNotActiveException()
+    {
+        var source = OpenAccount(initialBalance: 100m);
+        var destination = OpenAccount();
+        source.Freeze();
+
+        var act = () => source.TransferTo(destination, 10m, Now);
+
+        act.Should().Throw<AccountNotActiveException>().Which.AccountId.Should().Be(source.Id);
+    }
+
+    [Fact]
+    public void TransferTo_ToInactiveAccount_ThrowsAndLeavesSourceUnchanged()
+    {
+        var source = OpenAccount(initialBalance: 100m);
+        var destination = OpenAccount();
+        destination.Close();
+
+        var act = () => source.TransferTo(destination, 10m, Now);
+
+        act.Should().Throw<AccountNotActiveException>().Which.AccountId.Should().Be(destination.Id);
+        source.Balance.Should().Be(100m);
+    }
+
+    [Fact]
+    public void TransferTo_ThatWouldOverflowDestination_ThrowsAndLeavesSourceUnchanged()
+    {
+        var source = OpenAccount(initialBalance: 100m);
+        var destination = OpenAccount(initialBalance: Account.MaxMoneyValue);
+
+        var act = () => source.TransferTo(destination, 1m, Now);
+
+        act.Should().Throw<InvalidAmountException>();
+        source.Balance.Should().Be(100m);
+        destination.Balance.Should().Be(Account.MaxMoneyValue);
+    }
+
+    [Fact]
+    public void TransferTo_WithTooLongReference_ThrowsAndLeavesBothBalancesUnchanged()
+    {
+        var source = OpenAccount(initialBalance: 100m);
+        var destination = OpenAccount();
+        var reference = new string('r', Transaction.ReferenceMaxLength + 1);
+
+        var act = () => source.TransferTo(destination, 10m, Now, reference);
+
+        act.Should().Throw<DomainValidationException>();
+        source.Balance.Should().Be(100m);
+        destination.Balance.Should().Be(0m);
+    }
+
     // ---- Status changes ---------------------------------------------------------------------
 
     [Fact]

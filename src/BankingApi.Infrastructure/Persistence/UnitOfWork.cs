@@ -65,6 +65,44 @@ internal sealed class UnitOfWork : IUnitOfWork
         }
     }
 
+    /// <inheritdoc />
+    public async Task<TResult> ExecuteInTransactionAsync<TResult>(
+        Func<CancellationToken, Task<TResult>> operation,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(operation);
+
+        // With retry-on-failure enabled, a user transaction must run inside the execution strategy so the
+        // whole unit (reads, writes and commit) is retried together on transient failures.
+        var strategy = _dbContext.Database.CreateExecutionStrategy();
+        var attempt = 0;
+
+        try
+        {
+            return await strategy.ExecuteAsync(
+                async token =>
+                {
+                    if (attempt++ > 0)
+                    {
+                        // Discard entities tracked by the failed attempt before re-running.
+                        _dbContext.ChangeTracker.Clear();
+                    }
+
+                    await using var transaction = await _dbContext.Database.BeginTransactionAsync(token);
+                    var result = await operation(token);
+                    await transaction.CommitAsync(token);
+                    return result;
+                },
+                cancellationToken);
+        }
+        catch
+        {
+            // The transaction was rolled back; drop the in-memory changes so they cannot be saved later.
+            _dbContext.ChangeTracker.Clear();
+            throw;
+        }
+    }
+
     private static bool IsUniqueViolation(DbUpdateException exception) =>
         exception.InnerException is SqlException { Number: UniqueIndexViolation or UniqueConstraintViolation };
 }

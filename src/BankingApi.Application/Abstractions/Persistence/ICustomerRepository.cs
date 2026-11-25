@@ -1,3 +1,4 @@
+using BankingApi.Application.Common.Models;
 using BankingApi.Domain.Entities;
 
 namespace BankingApi.Application.Abstractions.Persistence;
@@ -22,4 +23,13 @@ public interface ICustomerRepository : IRepository<Customer>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns><see langword="true"/> if a customer uses the national ID; otherwise <see langword="false"/>.</returns>
     Task<bool> NationalIdExistsAsync(string nationalId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets one page of customers, oldest first.
+    /// </summary>
+    /// <param name="pageNumber">The 1-based page number.</param>
+    /// <param name="pageSize">The number of customers per page.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>The page of customers. Returned entities are read-only (not tracked).</returns>
+    Task<PagedResult<Customer>> ListAsync(int pageNumber, int pageSize, CancellationToken cancellationToken = default);
 }

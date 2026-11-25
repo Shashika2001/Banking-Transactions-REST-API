@@ -107,4 +107,12 @@ If only a newer .NET runtime is installed, prefix `dotnet ef` commands with `DOT
 
 - Entities have private setters and are created through static factories (`Customer.Create`, `Account.Open`). All balance changes go through `Account.Deposit`/`Account.Withdraw`, which return the `Transaction` to persist.
 - Rule violations throw subclasses of `DomainException`. Persistence failures surface as `ConcurrencyConflictException` or `DuplicateKeyException` (Application layer), never as EF Core types.
-- Timestamps are `DateTimeOffset` values passed in by the caller. The domain never reads the clock.
+- Timestamps are `DateTimeOffset` values passed in by the caller. The domain never reads the clock; services use the injected `TimeProvider`.
+
+## Application Conventions
+
+- Each feature folder (`Customers`, `Accounts`, `Transfers`, `Transactions`) holds its DTOs, validators, mappings, service interface and service. Controllers only call services and never see entities.
+- Services validate their own input with the injected `IValidator<T>` (`ValidateAndThrowAsync`), so validation runs however a service is called.
+- Every financial operation writes an audit entry through `IAuditTrail` **before** `SaveChangesAsync`, so the operation and its audit record commit together.
+- Throw the right exception type and let `GlobalExceptionHandler` map it: `ValidationException`/`DomainValidationException` → 400, `NotFoundException` → 404, `ConflictException` (and subclasses) → 409, other `DomainException` → 422, anything else → 500 with no internal details.
+- Operations that must be atomic across several reads and writes use `IUnitOfWork.ExecuteInTransactionAsync`.

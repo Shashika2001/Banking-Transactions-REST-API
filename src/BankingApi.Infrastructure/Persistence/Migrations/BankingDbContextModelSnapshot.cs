@@ -175,6 +175,9 @@ namespace BankingApi.Infrastructure.Persistence.Migrations
                         .HasMaxLength(140)
                         .HasColumnType("nvarchar(140)");
 
+                    b.Property<Guid?>("TransferId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("Type")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -185,6 +188,9 @@ namespace BankingApi.Infrastructure.Persistence.Migrations
                     b.HasIndex("IdempotencyKey")
                         .IsUnique()
                         .HasFilter("[IdempotencyKey] IS NOT NULL");
+
+                    b.HasIndex("TransferId")
+                        .HasFilter("[TransferId] IS NOT NULL");
 
                     b.HasIndex("AccountId", "CreatedAt");
 

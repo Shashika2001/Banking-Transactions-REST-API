@@ -5,6 +5,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="BankingApi.UnitTests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\BankingApi.Application\BankingApi.Application.csproj" />
     <ProjectReference Include="..\BankingApi.Domain\BankingApi.Domain.csproj" />
   </ItemGroup>
