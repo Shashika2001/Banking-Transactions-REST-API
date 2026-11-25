@@ -13,7 +13,7 @@ public class LayerDependencyTests
     [Fact]
     public void Domain_ReferencesOtherLayers_DoesNotDependOnAnyLayer()
     {
-        var references = GetSolutionReferences(typeof(Domain.AssemblyReference).Assembly);
+        var references = GetSolutionReferences(typeof(global::BankingApi.Domain.AssemblyReference).Assembly);
 
         references.Should().BeEmpty();
     }
@@ -21,7 +21,7 @@ public class LayerDependencyTests
     [Fact]
     public void Application_ReferencesOtherLayers_DependsOnlyOnDomain()
     {
-        var references = GetSolutionReferences(typeof(Application.AssemblyReference).Assembly);
+        var references = GetSolutionReferences(typeof(global::BankingApi.Application.AssemblyReference).Assembly);
 
         references.Should().BeSubsetOf([DomainAssembly]);
     }
@@ -29,7 +29,7 @@ public class LayerDependencyTests
     [Fact]
     public void Infrastructure_ReferencesOtherLayers_DoesNotDependOnApi()
     {
-        var references = GetSolutionReferences(typeof(Infrastructure.AssemblyReference).Assembly);
+        var references = GetSolutionReferences(typeof(global::BankingApi.Infrastructure.AssemblyReference).Assembly);
 
         references.Should().NotContain(ApiAssembly);
     }
@@ -37,7 +37,7 @@ public class LayerDependencyTests
     [Fact]
     public void Domain_ReferencesFrameworks_DoesNotDependOnEntityFrameworkOrAspNetCore()
     {
-        var references = typeof(Domain.AssemblyReference).Assembly
+        var references = typeof(global::BankingApi.Domain.AssemblyReference).Assembly
             .GetReferencedAssemblies()
             .Select(assembly => assembly.Name ?? string.Empty);
 

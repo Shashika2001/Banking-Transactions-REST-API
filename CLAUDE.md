@@ -94,4 +94,17 @@ dotnet build                      # Build the solution
 dotnet test                       # Run all tests
 dotnet run --project src/BankingApi.Api
 dotnet user-secrets set "ConnectionStrings:BankingDb" "<value>" --project src/BankingApi.Api
+
+# EF Core migrations (dotnet-ef is a local tool: run `dotnet tool restore` first).
+# Infrastructure is both project and startup project; BankingDbContextFactory supplies the context.
+dotnet ef migrations add <Name> --project src/BankingApi.Infrastructure --startup-project src/BankingApi.Infrastructure --output-dir Persistence/Migrations
+dotnet ef database update --project src/BankingApi.Infrastructure --startup-project src/BankingApi.Infrastructure --connection "<connection-string>"
 ```
+
+If only a newer .NET runtime is installed, prefix `dotnet ef` commands with `DOTNET_ROLL_FORWARD=Major`.
+
+## Domain Conventions
+
+- Entities have private setters and are created through static factories (`Customer.Create`, `Account.Open`). All balance changes go through `Account.Deposit`/`Account.Withdraw`, which return the `Transaction` to persist.
+- Rule violations throw subclasses of `DomainException`. Persistence failures surface as `ConcurrencyConflictException` or `DuplicateKeyException` (Application layer), never as EF Core types.
+- Timestamps are `DateTimeOffset` values passed in by the caller. The domain never reads the clock.

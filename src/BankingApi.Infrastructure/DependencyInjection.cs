@@ -1,4 +1,6 @@
+using BankingApi.Application.Abstractions.Persistence;
 using BankingApi.Infrastructure.Persistence;
+using BankingApi.Infrastructure.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -37,7 +39,14 @@ public static class DependencyInjection
                 "Set it with user-secrets or the ConnectionStrings__BankingDb environment variable.");
         }
 
-        services.AddDbContext<BankingDbContext>(options => options.UseSqlServer(connectionString));
+        services.AddDbContext<BankingDbContext>(options =>
+            options.UseSqlServer(connectionString, sqlServer => sqlServer.EnableRetryOnFailure()));
+
+        services.AddScoped<ICustomerRepository, CustomerRepository>();
+        services.AddScoped<IAccountRepository, AccountRepository>();
+        services.AddScoped<ITransactionRepository, TransactionRepository>();
+        services.AddScoped<IAuditLogRepository, AuditLogRepository>();
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         return services;
     }
