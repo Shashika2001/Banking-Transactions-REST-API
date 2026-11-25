@@ -19,6 +19,9 @@ public interface IUnitOfWork
     /// <summary>Gets the audit log repository.</summary>
     IAuditLogRepository AuditLogs { get; }
 
+    /// <summary>Gets the user repository.</summary>
+    IUserRepository Users { get; }
+
     /// <summary>
     /// Saves all pending changes in a single database transaction.
     /// </summary>

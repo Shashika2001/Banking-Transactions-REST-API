@@ -25,13 +25,15 @@ internal sealed class UnitOfWork : IUnitOfWork
         ICustomerRepository customers,
         IAccountRepository accounts,
         ITransactionRepository transactions,
-        IAuditLogRepository auditLogs)
+        IAuditLogRepository auditLogs,
+        IUserRepository users)
     {
         _dbContext = dbContext;
         Customers = customers;
         Accounts = accounts;
         Transactions = transactions;
         AuditLogs = auditLogs;
+        Users = users;
     }
 
     /// <inheritdoc />
@@ -45,6 +47,9 @@ internal sealed class UnitOfWork : IUnitOfWork
 
     /// <inheritdoc />
     public IAuditLogRepository AuditLogs { get; }
+
+    /// <inheritdoc />
+    public IUserRepository Users { get; }
 
     /// <inheritdoc />
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

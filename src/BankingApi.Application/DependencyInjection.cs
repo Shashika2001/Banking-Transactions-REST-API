@@ -1,5 +1,8 @@
 using BankingApi.Application.Accounts;
+using BankingApi.Application.AuditLogs;
+using BankingApi.Application.Auth;
 using BankingApi.Application.Auditing;
+using BankingApi.Application.Common.Security;
 using BankingApi.Application.Customers;
 using BankingApi.Application.Transactions;
 using BankingApi.Application.Transfers;
@@ -30,10 +33,17 @@ public static class DependencyInjection
             .Validate(options => options.DailyLimitPerAccount > 0m, "Transfers:DailyLimitPerAccount must be greater than zero.")
             .ValidateOnStart();
 
+        services.AddOptions<BootstrapAdminOptions>()
+            .Bind(configuration.GetSection(BootstrapAdminOptions.SectionName));
+
         services.AddValidatorsFromAssemblyContaining<AuditTrail>(ServiceLifetime.Singleton);
         services.AddSingleton(TimeProvider.System);
 
         services.AddScoped<IAuditTrail, AuditTrail>();
+        services.AddScoped<IAccessPolicy, AccessPolicy>();
+        services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IAdminSeeder, AdminSeeder>();
+        services.AddScoped<IAuditLogService, AuditLogService>();
         services.AddScoped<ICustomerService, CustomerService>();
         services.AddScoped<IAccountService, AccountService>();
         services.AddScoped<ITransactionService, TransactionService>();

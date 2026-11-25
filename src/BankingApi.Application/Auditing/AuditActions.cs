@@ -19,4 +19,7 @@ public static class AuditActions
 
     /// <summary>Money was transferred between accounts.</summary>
     public const string Transfer = "Transfer";
+
+    /// <summary>A customer registered a login.</summary>
+    public const string UserRegistered = "UserRegistered";
 }

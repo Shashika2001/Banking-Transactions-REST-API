@@ -1,4 +1,3 @@
-using BankingApi.Domain.Entities;
 using FluentValidation;
 
 namespace BankingApi.Application.Customers;
@@ -13,12 +12,8 @@ public sealed class CreateCustomerRequestValidator : AbstractValidator<CreateCus
     /// </summary>
     public CreateCustomerRequestValidator()
     {
-        RuleFor(request => request.FullName).NotEmpty().MaximumLength(Customer.FullNameMaxLength);
-        RuleFor(request => request.Email).NotEmpty().MaximumLength(Customer.EmailMaxLength).EmailAddress();
-        RuleFor(request => request.NationalId)
-            .NotEmpty()
-            .MaximumLength(Customer.NationalIdMaxLength)
-            .Matches("^[A-Za-z0-9-]+$")
-            .WithMessage("'{PropertyName}' may contain only letters, digits and hyphens.");
+        RuleFor(request => request.FullName).ValidFullName();
+        RuleFor(request => request.Email).ValidEmail();
+        RuleFor(request => request.NationalId).ValidNationalId();
     }
 }

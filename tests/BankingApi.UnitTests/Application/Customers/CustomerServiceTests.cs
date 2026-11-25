@@ -20,6 +20,7 @@ public class CustomerServiceTests
         new(
             _context.UnitOfWork.Object,
             _context.AuditTrail.Object,
+            _context.AccessPolicy,
             _context.TimeProvider.Object,
             new CreateCustomerRequestValidator(),
             new PageRequestValidator());

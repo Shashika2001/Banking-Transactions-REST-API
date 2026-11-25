@@ -1,5 +1,7 @@
+using BankingApi.Application.Abstractions;
 using BankingApi.Application.Abstractions.Persistence;
 using BankingApi.Application.Auditing;
+using BankingApi.Application.Common.Security;
 using BankingApi.Domain.Entities;
 using Moq;
 
@@ -7,7 +9,8 @@ namespace BankingApi.UnitTests.Application;
 
 /// <summary>
 /// Shared mocks for Application service tests: a unit of work wired to repository mocks, an audit trail mock,
-/// and a clock fixed at <see cref="Now"/>.
+/// a clock fixed at <see cref="Now"/>, and a current user (an admin unless <see cref="ActAsCustomer"/> is called)
+/// checked by the real <see cref="Application.Common.Security.AccessPolicy"/>.
 /// </summary>
 internal sealed class ApplicationTestContext
 {
@@ -19,7 +22,30 @@ internal sealed class ApplicationTestContext
         UnitOfWork.SetupGet(unitOfWork => unitOfWork.Accounts).Returns(Accounts.Object);
         UnitOfWork.SetupGet(unitOfWork => unitOfWork.Transactions).Returns(Transactions.Object);
         UnitOfWork.SetupGet(unitOfWork => unitOfWork.AuditLogs).Returns(AuditLogs.Object);
+        UnitOfWork.SetupGet(unitOfWork => unitOfWork.Users).Returns(Users.Object);
         TimeProvider.Setup(clock => clock.GetUtcNow()).Returns(Now);
+        AccessPolicy = new AccessPolicy(CurrentUser.Object);
+        ActAsAdmin();
+    }
+
+    public Mock<ICurrentUser> CurrentUser { get; } = new();
+
+    public IAccessPolicy AccessPolicy { get; }
+
+    public void ActAsAdmin()
+    {
+        CurrentUser.SetupGet(user => user.IsAuthenticated).Returns(true);
+        CurrentUser.SetupGet(user => user.IsAdmin).Returns(true);
+        CurrentUser.SetupGet(user => user.CustomerId).Returns((Guid?)null);
+        CurrentUser.SetupGet(user => user.UserId).Returns("admin-user");
+    }
+
+    public void ActAsCustomer(Guid customerId)
+    {
+        CurrentUser.SetupGet(user => user.IsAuthenticated).Returns(true);
+        CurrentUser.SetupGet(user => user.IsAdmin).Returns(false);
+        CurrentUser.SetupGet(user => user.CustomerId).Returns(customerId);
+        CurrentUser.SetupGet(user => user.UserId).Returns($"user-of-{customerId}");
     }
 
     public Mock<IUnitOfWork> UnitOfWork { get; } = new();
@@ -31,6 +57,8 @@ internal sealed class ApplicationTestContext
     public Mock<ITransactionRepository> Transactions { get; } = new();
 
     public Mock<IAuditLogRepository> AuditLogs { get; } = new();
+
+    public Mock<IUserRepository> Users { get; } = new();
 
     public Mock<IAuditTrail> AuditTrail { get; } = new();
 

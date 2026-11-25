@@ -5,11 +5,13 @@ using Microsoft.AspNetCore.Mvc;
 namespace BankingApi.Api.Controllers;
 
 /// <summary>
-/// Opens accounts, reads them, and deposits or withdraws money.
+/// Opens accounts, reads them, and deposits or withdraws money. Customers may only use their own accounts.
 /// </summary>
 [ApiController]
 [Route("api/accounts")]
 [Produces("application/json")]
+[ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
+[ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden)]
 public sealed class AccountsController : ControllerBase
 {
     private readonly IAccountService _accountService;

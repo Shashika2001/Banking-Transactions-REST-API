@@ -1,6 +1,7 @@
 using BankingApi.Application.Abstractions.Persistence;
 using BankingApi.Application.Auditing;
 using BankingApi.Application.Common.Exceptions;
+using BankingApi.Application.Common.Security;
 using BankingApi.Domain.Entities;
 using BankingApi.Domain.Enums;
 using BankingApi.Domain.Exceptions;
@@ -17,6 +18,7 @@ public sealed class TransferService : ITransferService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IAuditTrail _auditTrail;
+    private readonly IAccessPolicy _accessPolicy;
     private readonly TimeProvider _timeProvider;
     private readonly IValidator<TransferRequest> _validator;
     private readonly TransferOptions _options;
@@ -27,6 +29,7 @@ public sealed class TransferService : ITransferService
     public TransferService(
         IUnitOfWork unitOfWork,
         IAuditTrail auditTrail,
+        IAccessPolicy accessPolicy,
         TimeProvider timeProvider,
         IValidator<TransferRequest> validator,
         IOptions<TransferOptions> options)
@@ -35,6 +38,7 @@ public sealed class TransferService : ITransferService
 
         _unitOfWork = unitOfWork;
         _auditTrail = auditTrail;
+        _accessPolicy = accessPolicy;
         _timeProvider = timeProvider;
         _validator = validator;
         _options = options.Value;
@@ -79,6 +83,10 @@ public sealed class TransferService : ITransferService
     private async Task<TransferResponse> ExecuteTransferAsync(TransferRequest request, string key, CancellationToken cancellationToken)
     {
         var source = await GetRequiredAccountAsync(request.SourceAccountId, cancellationToken);
+
+        // Only the owner (or an admin) may send money from an account; any account may receive it.
+        _accessPolicy.EnsureCanAccessAccount(source);
+
         var destination = await GetRequiredAccountAsync(request.DestinationAccountId, cancellationToken);
         var now = _timeProvider.GetUtcNow();
 
@@ -163,6 +171,10 @@ public sealed class TransferService : ITransferService
             throw new IdempotencyKeyReusedException(
                 "The idempotency key was already used for a transfer with different accounts or amount.");
         }
+
+        // A replay must pass the same access check as the original request.
+        var source = await GetRequiredAccountAsync(outgoing.AccountId, cancellationToken);
+        _accessPolicy.EnsureCanAccessAccount(source);
 
         return ToResponse(outgoing, incoming);
     }

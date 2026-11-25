@@ -4,11 +4,13 @@ using Microsoft.AspNetCore.Mvc;
 namespace BankingApi.Api.Controllers;
 
 /// <summary>
-/// Transfers money between accounts.
+/// Transfers money between accounts. Customers may only send money from their own accounts.
 /// </summary>
 [ApiController]
 [Route("api/transfers")]
 [Produces("application/json")]
+[ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
+[ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden)]
 public sealed class TransfersController : ControllerBase
 {
     /// <summary>Response header set to <c>true</c> when an earlier result is returned for a repeated idempotency key.</summary>

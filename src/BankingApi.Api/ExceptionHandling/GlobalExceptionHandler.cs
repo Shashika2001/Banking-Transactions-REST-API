@@ -57,6 +57,8 @@ public sealed partial class GlobalExceptionHandler : IExceptionHandler
     {
         ValidationException validation => CreateValidationProblem(validation),
         DomainValidationException => CreateProblem(StatusCodes.Status400BadRequest, "Invalid request", exception),
+        InvalidCredentialsException => CreateProblem(StatusCodes.Status401Unauthorized, "Authentication failed", exception),
+        ForbiddenAccessException => CreateProblem(StatusCodes.Status403Forbidden, "Forbidden", exception),
         NotFoundException => CreateProblem(StatusCodes.Status404NotFound, "Resource not found", exception),
         ConflictException => CreateProblem(StatusCodes.Status409Conflict, "Conflict", exception),
         DomainException => CreateProblem(StatusCodes.Status422UnprocessableEntity, "Business rule violation", exception),

@@ -1,6 +1,7 @@
 using BankingApi.Application.Abstractions;
 using BankingApi.Application.Abstractions.Persistence;
 using BankingApi.Infrastructure.Accounts;
+using BankingApi.Infrastructure.Authentication;
 using BankingApi.Infrastructure.Persistence;
 using BankingApi.Infrastructure.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -48,8 +49,20 @@ public static class DependencyInjection
         services.AddScoped<IAccountRepository, AccountRepository>();
         services.AddScoped<ITransactionRepository, TransactionRepository>();
         services.AddScoped<IAuditLogRepository, AuditLogRepository>();
+        services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddSingleton<IAccountNumberGenerator, RandomAccountNumberGenerator>();
+
+        services.AddOptions<JwtOptions>()
+            .Bind(configuration.GetSection(JwtOptions.SectionName))
+            .Validate(
+                options => options.IsValid(),
+                $"Jwt settings are invalid: Issuer and Audience are required, Jwt:SigningKey must be at least " +
+                $"{JwtOptions.MinimumSigningKeyBytes} bytes (set it with user-secrets or the Jwt__SigningKey " +
+                "environment variable), and AccessTokenLifetimeMinutes must be 1-1440.")
+            .ValidateOnStart();
+        services.AddSingleton<IPasswordHasher, IdentityPasswordHasher>();
+        services.AddSingleton<ITokenService, JwtTokenService>();
 
         return services;
     }

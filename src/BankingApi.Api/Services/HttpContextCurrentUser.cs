@@ -1,10 +1,12 @@
+using System.Security.Claims;
 using BankingApi.Application.Abstractions;
+using BankingApi.Application.Common.Security;
+using BankingApi.Infrastructure.Authentication;
 
 namespace BankingApi.Api.Services;
 
 /// <summary>
-/// Reads the current user from the HTTP context. Until authentication is added, requests are attributed to
-/// <see cref="AnonymousUserId"/>.
+/// Reads the current user from the validated access token on the HTTP request.
 /// </summary>
 public sealed class HttpContextCurrentUser : ICurrentUser
 {
@@ -23,8 +25,22 @@ public sealed class HttpContextCurrentUser : ICurrentUser
     }
 
     /// <inheritdoc />
+    public bool IsAuthenticated => Principal?.Identity?.IsAuthenticated == true;
+
+    /// <inheritdoc />
     public string UserId =>
-        _httpContextAccessor.HttpContext?.User.Identity is { IsAuthenticated: true, Name: { Length: > 0 } name }
-            ? name
+        IsAuthenticated && Principal!.FindFirstValue(BankingClaimTypes.Subject) is { Length: > 0 } subject
+            ? subject
             : AnonymousUserId;
+
+    /// <inheritdoc />
+    public bool IsAdmin => IsAuthenticated && Principal!.IsInRole(Roles.Admin);
+
+    /// <inheritdoc />
+    public Guid? CustomerId =>
+        IsAuthenticated && Guid.TryParse(Principal!.FindFirstValue(BankingClaimTypes.CustomerId), out var customerId)
+            ? customerId
+            : null;
+
+    private ClaimsPrincipal? Principal => _httpContextAccessor.HttpContext?.User;
 }

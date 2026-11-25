@@ -1,3 +1,5 @@
+using BankingApi.Application.AuditLogs;
+using BankingApi.Application.Common.Models;
 using BankingApi.Domain.Entities;
 
 namespace BankingApi.Application.Abstractions.Persistence;
@@ -8,11 +10,10 @@ namespace BankingApi.Application.Abstractions.Persistence;
 public interface IAuditLogRepository : IRepository<AuditLog>
 {
     /// <summary>
-    /// Gets the audit history of one entity, newest first.
+    /// Searches audit entries, newest first. Every filter in <paramref name="query"/> is optional.
     /// </summary>
-    /// <param name="entityName">The entity type name.</param>
-    /// <param name="entityId">The entity identifier.</param>
+    /// <param name="query">Filters and paging.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
-    /// <returns>The audit entries. Returned entities are read-only (not tracked).</returns>
-    Task<IReadOnlyList<AuditLog>> GetByEntityAsync(string entityName, string entityId, CancellationToken cancellationToken = default);
+    /// <returns>The requested page. Not tracked.</returns>
+    Task<PagedResult<AuditLog>> SearchAsync(AuditLogQuery query, CancellationToken cancellationToken = default);
 }

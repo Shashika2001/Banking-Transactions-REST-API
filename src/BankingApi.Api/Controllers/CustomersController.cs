@@ -1,5 +1,7 @@
 using BankingApi.Application.Common.Models;
+using BankingApi.Application.Common.Security;
 using BankingApi.Application.Customers;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BankingApi.Api.Controllers;
@@ -10,6 +12,8 @@ namespace BankingApi.Api.Controllers;
 [ApiController]
 [Route("api/customers")]
 [Produces("application/json")]
+[ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
+[ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden)]
 public sealed class CustomersController : ControllerBase
 {
     private readonly ICustomerService _customerService;
@@ -24,12 +28,13 @@ public sealed class CustomersController : ControllerBase
     }
 
     /// <summary>
-    /// Creates a customer.
+    /// Creates a customer (admin only). Customers sign up through <c>POST /api/auth/register</c>.
     /// </summary>
     /// <param name="request">The customer details.</param>
     /// <param name="cancellationToken">A token to cancel the request.</param>
     /// <returns>The created customer.</returns>
     [HttpPost]
+    [Authorize(Roles = Roles.Admin)]
     [ProducesResponseType<CustomerResponse>(StatusCodes.Status201Created)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
@@ -40,7 +45,7 @@ public sealed class CustomersController : ControllerBase
     }
 
     /// <summary>
-    /// Gets a customer.
+    /// Gets a customer. Customers may only get themselves.
     /// </summary>
     /// <param name="customerId">The customer identifier.</param>
     /// <param name="cancellationToken">A token to cancel the request.</param>
@@ -52,12 +57,13 @@ public sealed class CustomersController : ControllerBase
         await _customerService.GetByIdAsync(customerId, cancellationToken);
 
     /// <summary>
-    /// Lists customers, oldest first.
+    /// Lists customers, oldest first (admin only).
     /// </summary>
     /// <param name="request">Paging parameters (<c>pageNumber</c>, <c>pageSize</c> up to 100).</param>
     /// <param name="cancellationToken">A token to cancel the request.</param>
     /// <returns>One page of customers.</returns>
     [HttpGet]
+    [Authorize(Roles = Roles.Admin)]
     [ProducesResponseType<PagedResult<CustomerResponse>>(StatusCodes.Status200OK)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<PagedResult<CustomerResponse>>> List(

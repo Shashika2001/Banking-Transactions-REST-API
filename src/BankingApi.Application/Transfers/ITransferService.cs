@@ -19,6 +19,7 @@ public interface ITransferService
     /// <returns>The transfer, and whether it was a replay of an earlier request.</returns>
     /// <exception cref="ValidationException">Thrown when the request or idempotency key is invalid.</exception>
     /// <exception cref="NotFoundException">Thrown when either account does not exist.</exception>
+    /// <exception cref="ForbiddenAccessException">Thrown when the caller is neither an admin nor the source account owner.</exception>
     /// <exception cref="IdempotencyKeyReusedException">Thrown when the key was used for a different request.</exception>
     /// <exception cref="DailyTransferLimitExceededException">Thrown when the source account's daily limit would be exceeded.</exception>
     /// <exception cref="DomainException">Thrown when another business rule is violated (for example, insufficient funds).</exception>

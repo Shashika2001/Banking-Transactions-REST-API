@@ -16,6 +16,7 @@ public interface ICustomerService
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>The created customer.</returns>
     /// <exception cref="ValidationException">Thrown when the request is invalid.</exception>
+    /// <exception cref="ForbiddenAccessException">Thrown when the caller is not an admin.</exception>
     /// <exception cref="ConflictException">Thrown when the email or national ID is already registered.</exception>
     Task<CustomerResponse> CreateAsync(CreateCustomerRequest request, CancellationToken cancellationToken = default);
 
@@ -25,6 +26,7 @@ public interface ICustomerService
     /// <param name="customerId">The customer identifier.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>The customer.</returns>
+    /// <exception cref="ForbiddenAccessException">Thrown when the caller is neither an admin nor this customer.</exception>
     /// <exception cref="NotFoundException">Thrown when the customer does not exist.</exception>
     Task<CustomerResponse> GetByIdAsync(Guid customerId, CancellationToken cancellationToken = default);
 
@@ -34,6 +36,7 @@ public interface ICustomerService
     /// <param name="request">The paging parameters.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>The requested page.</returns>
+    /// <exception cref="ForbiddenAccessException">Thrown when the caller is not an admin.</exception>
     /// <exception cref="ValidationException">Thrown when the paging parameters are invalid.</exception>
     Task<PagedResult<CustomerResponse>> ListAsync(PageRequest request, CancellationToken cancellationToken = default);
 }

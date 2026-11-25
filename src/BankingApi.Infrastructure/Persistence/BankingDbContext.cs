@@ -29,6 +29,9 @@ public sealed class BankingDbContext : DbContext
     /// <summary>Gets the audit log entries.</summary>
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
+    /// <summary>Gets the API users.</summary>
+    public DbSet<User> Users => Set<User>();
+
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

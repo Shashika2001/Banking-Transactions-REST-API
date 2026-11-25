@@ -2,6 +2,7 @@ using BankingApi.Application.Abstractions;
 using BankingApi.Application.Abstractions.Persistence;
 using BankingApi.Application.Auditing;
 using BankingApi.Application.Common.Exceptions;
+using BankingApi.Application.Common.Security;
 using BankingApi.Application.Transactions;
 using BankingApi.Domain.Entities;
 using FluentValidation;
@@ -18,6 +19,7 @@ public sealed class AccountService : IAccountService
 
     private readonly IUnitOfWork _unitOfWork;
     private readonly IAuditTrail _auditTrail;
+    private readonly IAccessPolicy _accessPolicy;
     private readonly TimeProvider _timeProvider;
     private readonly IAccountNumberGenerator _accountNumberGenerator;
     private readonly IValidator<OpenAccountRequest> _openValidator;
@@ -29,6 +31,7 @@ public sealed class AccountService : IAccountService
     public AccountService(
         IUnitOfWork unitOfWork,
         IAuditTrail auditTrail,
+        IAccessPolicy accessPolicy,
         TimeProvider timeProvider,
         IAccountNumberGenerator accountNumberGenerator,
         IValidator<OpenAccountRequest> openValidator,
@@ -36,6 +39,7 @@ public sealed class AccountService : IAccountService
     {
         _unitOfWork = unitOfWork;
         _auditTrail = auditTrail;
+        _accessPolicy = accessPolicy;
         _timeProvider = timeProvider;
         _accountNumberGenerator = accountNumberGenerator;
         _openValidator = openValidator;
@@ -46,6 +50,7 @@ public sealed class AccountService : IAccountService
     public async Task<AccountResponse> OpenAsync(OpenAccountRequest request, CancellationToken cancellationToken = default)
     {
         await _openValidator.ValidateAndThrowAsync(request, cancellationToken);
+        _accessPolicy.EnsureCanAccessCustomer(request.CustomerId);
 
         if (!await _unitOfWork.Customers.ExistsAsync(request.CustomerId, cancellationToken))
         {
@@ -133,9 +138,14 @@ public sealed class AccountService : IAccountService
         return transaction.ToResponse();
     }
 
-    private async Task<Account> GetRequiredAccountAsync(Guid accountId, CancellationToken cancellationToken) =>
-        await _unitOfWork.Accounts.GetByIdAsync(accountId, cancellationToken)
+    private async Task<Account> GetRequiredAccountAsync(Guid accountId, CancellationToken cancellationToken)
+    {
+        var account = await _unitOfWork.Accounts.GetByIdAsync(accountId, cancellationToken)
             ?? throw new NotFoundException(nameof(Account), accountId);
+
+        _accessPolicy.EnsureCanAccessAccount(account);
+        return account;
+    }
 
     private async Task<string> GenerateUniqueAccountNumberAsync(CancellationToken cancellationToken)
     {

@@ -116,3 +116,11 @@ If only a newer .NET runtime is installed, prefix `dotnet ef` commands with `DOT
 - Every financial operation writes an audit entry through `IAuditTrail` **before** `SaveChangesAsync`, so the operation and its audit record commit together.
 - Throw the right exception type and let `GlobalExceptionHandler` map it: `ValidationException`/`DomainValidationException` → 400, `NotFoundException` → 404, `ConflictException` (and subclasses) → 409, other `DomainException` → 422, anything else → 500 with no internal details.
 - Operations that must be atomic across several reads and writes use `IUnitOfWork.ExecuteInTransactionAsync`.
+
+## Authorization
+
+- Every endpoint requires authentication (fallback policy) unless marked `[AllowAnonymous]`. Admin-only endpoints also use `[Authorize(Roles = Roles.Admin)]`.
+- **Resource ownership is enforced in services, not controllers:** every service method that reads or changes a customer, account or transaction calls `IAccessPolicy` (`EnsureCanAccessCustomer`, `EnsureCanAccessAccount`, `EnsureAdmin`). Any new service method touching customer data must do the same, with a test in `CustomerIsolationTests`.
+- `ForbiddenAccessException` → 403 and `InvalidCredentialsException` → 401. Login failures never say whether the email or the password was wrong.
+- Never return a raw `NationalId`. Use `SensitiveDataMasker.MaskNationalId`.
+- Secrets (`Jwt:SigningKey`, `BootstrapAdmin:*`, connection strings) come only from user-secrets or environment variables.

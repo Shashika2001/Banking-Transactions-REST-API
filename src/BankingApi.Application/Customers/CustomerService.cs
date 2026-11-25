@@ -2,6 +2,7 @@ using BankingApi.Application.Abstractions.Persistence;
 using BankingApi.Application.Auditing;
 using BankingApi.Application.Common.Exceptions;
 using BankingApi.Application.Common.Models;
+using BankingApi.Application.Common.Security;
 using BankingApi.Domain.Entities;
 using FluentValidation;
 
@@ -14,6 +15,7 @@ public sealed class CustomerService : ICustomerService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IAuditTrail _auditTrail;
+    private readonly IAccessPolicy _accessPolicy;
     private readonly TimeProvider _timeProvider;
     private readonly IValidator<CreateCustomerRequest> _createValidator;
     private readonly IValidator<PageRequest> _pageValidator;
@@ -24,12 +26,14 @@ public sealed class CustomerService : ICustomerService
     public CustomerService(
         IUnitOfWork unitOfWork,
         IAuditTrail auditTrail,
+        IAccessPolicy accessPolicy,
         TimeProvider timeProvider,
         IValidator<CreateCustomerRequest> createValidator,
         IValidator<PageRequest> pageValidator)
     {
         _unitOfWork = unitOfWork;
         _auditTrail = auditTrail;
+        _accessPolicy = accessPolicy;
         _timeProvider = timeProvider;
         _createValidator = createValidator;
         _pageValidator = pageValidator;
@@ -38,6 +42,7 @@ public sealed class CustomerService : ICustomerService
     /// <inheritdoc />
     public async Task<CustomerResponse> CreateAsync(CreateCustomerRequest request, CancellationToken cancellationToken = default)
     {
+        _accessPolicy.EnsureAdmin();
         await _createValidator.ValidateAndThrowAsync(request, cancellationToken);
 
         var email = request.Email.Trim();
@@ -65,6 +70,9 @@ public sealed class CustomerService : ICustomerService
     /// <inheritdoc />
     public async Task<CustomerResponse> GetByIdAsync(Guid customerId, CancellationToken cancellationToken = default)
     {
+        // Checked before the lookup, so customers cannot probe which other customer IDs exist.
+        _accessPolicy.EnsureCanAccessCustomer(customerId);
+
         var customer = await _unitOfWork.Customers.GetByIdAsync(customerId, cancellationToken)
             ?? throw new NotFoundException(nameof(Customer), customerId);
 
@@ -74,6 +82,7 @@ public sealed class CustomerService : ICustomerService
     /// <inheritdoc />
     public async Task<PagedResult<CustomerResponse>> ListAsync(PageRequest request, CancellationToken cancellationToken = default)
     {
+        _accessPolicy.EnsureAdmin();
         await _pageValidator.ValidateAndThrowAsync(request, cancellationToken);
 
         var page = await _unitOfWork.Customers.ListAsync(request.PageNumber, request.PageSize, cancellationToken);

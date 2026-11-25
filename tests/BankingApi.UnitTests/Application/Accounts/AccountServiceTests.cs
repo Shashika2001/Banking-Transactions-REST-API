@@ -24,6 +24,7 @@ public class AccountServiceTests
         new(
             _context.UnitOfWork.Object,
             _context.AuditTrail.Object,
+            _context.AccessPolicy,
             _context.TimeProvider.Object,
             _accountNumberGenerator.Object,
             new OpenAccountRequestValidator(),

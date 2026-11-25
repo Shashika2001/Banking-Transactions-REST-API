@@ -31,6 +31,7 @@ public class TransferServiceTests
         new(
             _context.UnitOfWork.Object,
             _context.AuditTrail.Object,
+            _context.AccessPolicy,
             _context.TimeProvider.Object,
             new TransferRequestValidator(),
             Options.Create(new TransferOptions { DailyLimitPerAccount = DailyLimit }));

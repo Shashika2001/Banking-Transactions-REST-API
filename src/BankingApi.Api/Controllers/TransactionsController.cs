@@ -5,11 +5,13 @@ using Microsoft.AspNetCore.Mvc;
 namespace BankingApi.Api.Controllers;
 
 /// <summary>
-/// Reads an account's transaction history.
+/// Reads an account's transaction history. Customers may only read their own accounts.
 /// </summary>
 [ApiController]
 [Route("api/accounts/{accountId:guid}/transactions")]
 [Produces("application/json")]
+[ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
+[ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden)]
 public sealed class TransactionsController : ControllerBase
 {
     private readonly ITransactionService _transactionService;

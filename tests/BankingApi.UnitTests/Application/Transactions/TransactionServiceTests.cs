@@ -16,7 +16,7 @@ public class TransactionServiceTests
     private readonly ApplicationTestContext _context = new();
 
     private TransactionService CreateService() =>
-        new(_context.UnitOfWork.Object, new TransactionHistoryQueryValidator());
+        new(_context.UnitOfWork.Object, _context.AccessPolicy, new TransactionHistoryQueryValidator());
 
     [Fact]
     public async Task GetHistoryAsync_WithValidQuery_ReturnsMappedPage()

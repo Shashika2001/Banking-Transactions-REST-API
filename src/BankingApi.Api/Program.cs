@@ -1,4 +1,4 @@
-using System.Reflection;
+using BankingApi.Api.Configuration;
 using BankingApi.Api.ExceptionHandling;
 using BankingApi.Api.Services;
 using BankingApi.Application;
@@ -13,12 +13,9 @@ builder.Services.AddProblemDetails(options =>
         context.ProblemDetails.Extensions["traceId"] = context.HttpContext.TraceIdentifier);
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(options =>
-{
-    var xmlDocumentation = Path.Combine(AppContext.BaseDirectory, $"{Assembly.GetExecutingAssembly().GetName().Name}.xml");
-    options.IncludeXmlComments(xmlDocumentation);
-});
+builder.Services.AddSwaggerWithBearerAuth();
+builder.Services.AddJwtAuthentication();
+builder.Services.AddLoginRateLimiting(builder.Configuration);
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUser, HttpContextCurrentUser>();
@@ -43,7 +40,10 @@ else
 }
 
 app.UseHttpsRedirection();
+app.UseRateLimiter();
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
+await app.SeedBootstrapAdminAsync();
 await app.RunAsync();

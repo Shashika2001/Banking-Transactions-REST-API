@@ -18,6 +18,7 @@ public interface ITransactionService
     /// <returns>The requested page.</returns>
     /// <exception cref="ValidationException">Thrown when the query is invalid.</exception>
     /// <exception cref="NotFoundException">Thrown when the account does not exist.</exception>
+    /// <exception cref="ForbiddenAccessException">Thrown when the caller is neither an admin nor the account owner.</exception>
     Task<PagedResult<TransactionResponse>> GetHistoryAsync(
         Guid accountId,
         TransactionHistoryQuery query,
