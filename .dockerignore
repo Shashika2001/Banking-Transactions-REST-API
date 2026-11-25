@@ -1,0 +1,22 @@
+# Build output and IDE files
+**/bin/
+**/obj/
+**/TestResults/
+**/CoverageReport/
+.vs/
+.vscode/
+.idea/
+*.user
+
+# Not needed to build the API image
+.git/
+.github/
+tests/
+*.md
+docker-compose*.yml
+Dockerfile
+.dockerignore
+
+# Secrets must never be baked into an image
+.env
+**/secrets.json

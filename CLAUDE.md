@@ -92,7 +92,11 @@ After **every** task:
 ```bash
 dotnet build                      # Build the solution
 dotnet test                       # Run all tests
-dotnet run --project src/BankingApi.Api
+dotnet run --project src/BankingApi.Api   # Development: applies migrations and seeds on startup
+dotnet test --settings coverlet.runsettings --collect:"XPlat Code Coverage"   # tests with coverage (as CI does)
+
+# Full stack (API + SQL Server 2022): secrets come from .env (gitignored), copied from .env.example
+cp .env.example .env && docker compose up --build
 dotnet user-secrets set "ConnectionStrings:BankingDb" "<value>" --project src/BankingApi.Api
 
 # EF Core migrations (dotnet-ef is a local tool: run `dotnet tool restore` first).

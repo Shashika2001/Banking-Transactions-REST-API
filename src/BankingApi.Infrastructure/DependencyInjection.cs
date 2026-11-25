@@ -45,6 +45,8 @@ public static class DependencyInjection
         services.AddDbContext<BankingDbContext>(options =>
             options.UseSqlServer(connectionString, sqlServer => sqlServer.EnableRetryOnFailure()));
 
+        services.AddHealthChecks().AddDbContextCheck<BankingDbContext>("database");
+
         services.AddScoped<ICustomerRepository, CustomerRepository>();
         services.AddScoped<IAccountRepository, AccountRepository>();
         services.AddScoped<ITransactionRepository, TransactionRepository>();

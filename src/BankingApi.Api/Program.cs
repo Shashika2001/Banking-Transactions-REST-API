@@ -44,6 +44,7 @@ app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHealthChecks("/health").AllowAnonymous();
 
-await app.SeedBootstrapAdminAsync();
+await app.RunStartupTasksAsync();
 await app.RunAsync();

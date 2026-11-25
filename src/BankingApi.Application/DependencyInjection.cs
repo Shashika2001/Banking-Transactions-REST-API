@@ -4,6 +4,7 @@ using BankingApi.Application.Auth;
 using BankingApi.Application.Auditing;
 using BankingApi.Application.Common.Security;
 using BankingApi.Application.Customers;
+using BankingApi.Application.Seeding;
 using BankingApi.Application.Transactions;
 using BankingApi.Application.Transfers;
 using FluentValidation;
@@ -36,6 +37,9 @@ public static class DependencyInjection
         services.AddOptions<BootstrapAdminOptions>()
             .Bind(configuration.GetSection(BootstrapAdminOptions.SectionName));
 
+        services.AddOptions<DemoDataOptions>()
+            .Bind(configuration.GetSection(DemoDataOptions.SectionName));
+
         services.AddValidatorsFromAssemblyContaining<AuditTrail>(ServiceLifetime.Singleton);
         services.AddSingleton(TimeProvider.System);
 
@@ -43,6 +47,7 @@ public static class DependencyInjection
         services.AddScoped<IAccessPolicy, AccessPolicy>();
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IAdminSeeder, AdminSeeder>();
+        services.AddScoped<IDemoDataSeeder, DemoDataSeeder>();
         services.AddScoped<IAuditLogService, AuditLogService>();
         services.AddScoped<ICustomerService, CustomerService>();
         services.AddScoped<IAccountService, AccountService>();
